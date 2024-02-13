@@ -1,0 +1,39 @@
+server:
+  port: 22345
+
+#mybatis-plus:
+#  configuration:
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+logging:
+  level:
+    cache: warn
+    com.baomidou.mybatisplus.core.executor.BaseExecutor: warn
+    cache.demo.*: info
+
+spring:
+  datasource:
+    url: jdbc:mysql://localhost:3306/cache_demo?useSSL=false&useUnicode=true&characterEncoding=UTF-8&zeroDateTimeBehavior=convertToNull&transformedBitIsBoolean=true&serverTimezone=GMT%2B8&nullCatalogMeansCurrent=true&allowPublicKeyRetrieval=true
+    username: cache_demo
+    password: dx_8ZPKuqko_D00p
+  data:
+    redis:
+      lettuce:
+        pool:
+          enabled: true
+          max-active: 8
+          max-idle: 8
+          max-wait: -1ms
+          min-idle: 0
+      timeout: 10000ms
+      host: 172.20.2.103
+      port: 6379
+      password:
+      database: "6"
+  cache:
+    type: redis
+    redis:
+      cache-null-values: true
+      # 单位为秒，在 RedisConfig.java 中用到
+      time-to-live: 1440
+
