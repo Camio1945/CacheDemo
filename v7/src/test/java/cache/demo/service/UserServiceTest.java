@@ -1,6 +1,9 @@
 package cache.demo.service;
 
 
+import static cache.demo.cache.UserCache.USER_ACCOUNT_CACHE_PREFIX;
+import static cache.demo.cache.UserCache.USER_ID_CACHE_PREFIX;
+
 import cache.demo.entity.User;
 import cache.demo.mapper.UserMapper;
 import common.WithSpringBootTestAnnotation;
@@ -9,9 +12,6 @@ import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.*;
 import org.springframework.data.redis.serializer.SerializationException;
-
-import static cache.demo.cache.UserCache.USER_ACCOUNT_CACHE_PREFIX;
-import static cache.demo.cache.UserCache.USER_ID_CACHE_PREFIX;
 
 /**
  * 用户服务测试类
@@ -192,12 +192,13 @@ class UserServiceTest extends WithSpringBootTestAnnotation {
    */
   @Test
   @Order(5)
-  void getByIdFromAccount() {
+  void getByAccount() {
     redisTemplate.delete(ID_KEY_PREFIX + "1");
-    redisTemplate.delete(ACCOUNT_KEY_PREFIX + "user1");
-    User first = userService.getById(userService.getIdByAccount("user1"));
+    String user1 = "user1";
+    redisTemplate.delete(ACCOUNT_KEY_PREFIX + user1);
+    User first = userService.getByAccount(user1);
     Assertions.assertNotNull(first);
-    User second = userService.getById(userService.getIdByAccount("user1"));
+    User second = userService.getByAccount(user1);
     Assertions.assertNotNull(second);
     log.info("查看控制台，会打印 2 条与本测试方法相关的 SQL 语句，说明缓存生效了");
   }

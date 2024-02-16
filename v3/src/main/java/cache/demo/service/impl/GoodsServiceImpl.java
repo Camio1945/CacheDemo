@@ -26,7 +26,7 @@ public class GoodsServiceImpl implements IGoodsService {
    */
   @Override
   @Cacheable(value = GOODS_ID_CACHE_PREFIX, key = "#id", sync = true)
-  @Deprecated(since = "0.0.3")
+  @Deprecated(since = "v3")
   public Goods getByIdWithSync(@NonNull Integer id) {
     return goodsMapper.selectById(id);
   }

@@ -3,6 +3,7 @@ package problem;
 import static cache.demo.service.impl.GoodsServiceImpl.GOODS_ID_CACHE_PREFIX;
 
 import cache.demo.service.IGoodsService;
+import cn.hutool.core.date.TimeInterval;
 import common.WithSpringBootTestAnnotation;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,14 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
- * 用于演示 v2 版本的问题：高并发访问一个 key 时，如果缓存中不存在，不管数据库中是否存在，都会导致同一时刻会有多个请求查询数据库，导致数据库压力增大。
+ * 用于演示 v2 版本的问题：见 README.md 文档。
+ *
+ * <pre>
+ * 要查看控制台打印的 SQL 语句，需要打开 application.yml 中的如下配置：
+ * mybatis-plus:
+ *   configuration:
+ *     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+ * </pre>
  *
  * @author Camio1945
  */
@@ -27,9 +35,16 @@ class V2ProblemTest extends WithSpringBootTestAnnotation {
 
   @Test
   void problem() throws InterruptedException {
+    log.info(
+        "\n\n"
+            + "要查看控制台打印的 SQL 语句，需要打开 application.yml 中的如下配置：\n"
+            + "mybatis-plus:\n"
+            + "  configuration:\n"
+            + "    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl\n");
     // 先删除缓存
     stringRedisTemplate.delete(KEY_PREFIX + MAX_ID);
-    int count = 10;
+    int count = 1000;
+    TimeInterval timeInterval = new TimeInterval();
     CountDownLatch countDownLatch = new CountDownLatch(count);
     List<Thread> threadList = new ArrayList<>();
     for (int i = 0; i < count; i++) {
@@ -49,6 +64,7 @@ class V2ProblemTest extends WithSpringBootTestAnnotation {
     for (Thread thread : threadList) {
       thread.join();
     }
+    log.info("\nsolution1 耗时：{}ms", timeInterval.intervalMs());
     log.info("从控制台应该可以看到打印了多条 SQL 语句。按道理来讲，只应该打印一条，其余的查询缓存。");
   }
 }

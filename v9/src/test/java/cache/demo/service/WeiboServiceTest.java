@@ -12,6 +12,8 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import common.WithSpringBootTestAnnotation;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +29,7 @@ import org.springframework.data.redis.serializer.SerializationException;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 class WeiboServiceTest extends WithSpringBootTestAnnotation {
   private static final int MIN_ID = 1;
-  private static final int MAX_ID = 10000;
+  private static final int MAX_ID = 1000;
   private static final String ID_KEY_PREFIX = WEIBO_ID_CACHE_PREFIX + "::";
 
   @Autowired IWeiboService weiboService;
@@ -124,6 +126,11 @@ class WeiboServiceTest extends WithSpringBootTestAnnotation {
 
     // 验证添加成功后会从缓存中删除数据
     Assertions.assertFalse(cacheUtil.hasKey(ID_KEY_PREFIX + newId));
+
+    // 新增之后，验证查询用户最新的微博数量是正确的
+    IPage<Weibo> latestPageByUserId = weiboService.getLatestPageByUserId(1, new Page<>(1, 10));
+    List<Weibo> records = latestPageByUserId.getRecords();
+    Assertions.assertEquals(10, records.size());
   }
 
   @Test
@@ -235,4 +242,5 @@ class WeiboServiceTest extends WithSpringBootTestAnnotation {
     userService.delete(userId);
     weiboMapper.deleteBatchIds(weiboIdList);
   }
+
 }

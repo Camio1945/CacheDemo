@@ -176,12 +176,12 @@ class GoodsServiceTest extends WithSpringBootTestAnnotation {
 
   @Test
   @Order(5)
-  void getIdByStoreIdName() {
+  void getByStoreIdName() {
     Integer storeId = 1;
     String name = "店铺1的商品10";
     redisTemplate.delete(GOODS_STORE_ID_NAME_CACHE_PREFIX + "::" + storeId + ":" + name);
-    Integer id = goodsService.getIdByStoreIdName(storeId, name);
-    Assertions.assertNotNull(id);
-    Assertions.assertEquals(10, id.intValue());
+    Goods goods = goodsService.getByStoreIdName(storeId, name);
+    Assertions.assertNotNull(goods);
+    Assertions.assertEquals(10, goods.getId());
   }
 }

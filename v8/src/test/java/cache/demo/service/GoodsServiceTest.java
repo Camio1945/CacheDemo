@@ -216,13 +216,13 @@ class GoodsServiceTest extends WithSpringBootTestAnnotation {
 
   @Test
   @Order(5)
-  void getIdByStoreIdName() {
+  void getByStoreIdName() {
     Integer storeId = 1;
     String name = "店铺1的商品10";
     redisTemplate.delete(GOODS_STORE_ID_NAME_CACHE_PREFIX + "::" + storeId + ":" + name);
-    Integer id = goodsService.getIdByStoreIdName(storeId, name);
-    Assertions.assertNotNull(id);
-    Assertions.assertEquals(10, id.intValue());
+    Goods goods = goodsService.getByStoreIdName(storeId, name);
+    Assertions.assertNotNull(goods);
+    Assertions.assertEquals(10, goods.getId());
   }
 
   @Test
@@ -337,7 +337,7 @@ class GoodsServiceTest extends WithSpringBootTestAnnotation {
     long timeWithoutCache = interval.intervalMs();
     log.info("第 2 次查询耗时（无缓存逻辑，无并发）：{} ms", timeWithoutCache);
     Assertions.assertEquals(totalWithCache, totalWithoutCache, "两次查询的总数量不一致");
-    Assertions.assertTrue(timeWithCache < timeWithoutCache, "有缓存逻辑的查询耗时应该小于无缓存逻辑的查询耗时");
+    log.info("注：这里无法断言有缓存逻辑的查询耗时一定小于无缓存逻辑的查询耗时，有可能是接近的，我们的目的是减少数据库的查询，而不是提升性能");
   }
 
   /** 性能测试，有并发 */
@@ -382,7 +382,7 @@ class GoodsServiceTest extends WithSpringBootTestAnnotation {
     log.info("第 4 次查询耗时（无缓存逻辑，有并发）：{} ms", timeWithoutCache);
 
     Assertions.assertEquals(totalWithCache.get(), totalWithoutCache.get(), "两次查询的总数量不一致");
-    Assertions.assertTrue(timeWithCache < timeWithoutCache, "有缓存逻辑的查询耗时应该小于无缓存逻辑的查询耗时");
+    log.info("注：这里无法断言有缓存逻辑的查询耗时一定小于无缓存逻辑的查询耗时，有可能是接近的，我们的目的是减少数据库的查询，而不是提升性能");
   }
 
   private void flushDb() {

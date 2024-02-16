@@ -5,6 +5,7 @@ import java.util.concurrent.*;
 
 /**
  * 单飞工具类
+ *
  * <pre>
  * 参考了<a href="https://pkg.go.dev/golang.org/x/sync/singleflight"> go 语言的 singleflight</a>
  * </pre>
@@ -24,9 +25,13 @@ public class SingleFlightUtil {
     try {
       // 如果 key 不存在，则 existingTask 为 null，此时需要执行 task.run()，否则直接返回 existingTask.get()
       if (existingTask == null) {
-        task.run();
-        T res = task.get();
-        KEY_TO_FUTURE_TASK_MAP.remove(key);
+        T res;
+        try {
+          task.run();
+          res = task.get();
+        } finally {
+          KEY_TO_FUTURE_TASK_MAP.remove(key);
+        }
         return res;
       } else {
         return existingTask.get();

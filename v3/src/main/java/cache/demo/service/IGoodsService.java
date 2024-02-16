@@ -17,7 +17,7 @@ public interface IGoodsService {
    * @return 商品信息
    * @deprecated 性能不好，请使用 {@link #getById(Integer)} 方法
    */
-  @Deprecated(since = "0.0.3")
+  @Deprecated(since = "v3")
   Goods getByIdWithSync(@NonNull Integer id);
 
   /**

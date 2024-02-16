@@ -5,12 +5,14 @@ import cache.demo.mapper.WeiboMapper;
 import cache.demo.util.SingleFlightUtil;
 import cn.hutool.core.lang.Assert;
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.ZSetOperations;
 import org.springframework.stereotype.Service;
@@ -36,6 +38,7 @@ public class WeiboCache {
 
   private WeiboMapper weiboMapper;
   private RedisTemplate<String, Object> redisTemplate;
+  private RedisCacheConfiguration cacheConfiguration;
 
   /**
    * 根据 id 获取微博
@@ -105,6 +108,8 @@ public class WeiboCache {
                     .map(id -> ZSetOperations.TypedTuple.of((Object) id, id.doubleValue()))
                     .collect(Collectors.toSet());
             zSetOperations.add(key, set);
+            Duration timeToLive = cacheConfiguration.getTtlFunction().getTimeToLive(key, set);
+            redisTemplate.expire(key, timeToLive);
           }
           return weiboIds;
         });
@@ -116,16 +121,21 @@ public class WeiboCache {
    * @param after 新增的微博
    */
   public void handleCacheAfterAdd(Weibo after) {
-    List<String> keys = List.of(WEIBO_ID_CACHE_PREFIX + "::" + after.getId());
-    redisTemplate.delete(keys);
+    redisTemplate.delete(WEIBO_ID_CACHE_PREFIX + "::" + after.getId());
     ZSetOperations<String, Object> zSetOperations = redisTemplate.opsForZSet();
-    // 新微博加到缓存中
     String key = WEIBO_IDS_BY_USER_ID_CACHE_PREFIX + "::" + after.getUserId();
-    zSetOperations.add(key, after.getId(), after.getId().doubleValue());
-    // 如果缓存中的微博数量超过指定条数，那么删除最旧的微博
     Long size = zSetOperations.size(key);
-    if (size != null && size > CACHE_WEIBO_SIZE_EACH_USER) {
-      zSetOperations.popMin(key, size - CACHE_WEIBO_SIZE_EACH_USER);
+    // 如果缓存中的条数为 0 ，说明很有可能还没有查询过，这个时候触发一次查询
+    if (size == null || size == 0) {
+      getWeiboIdsByUserId(after.getUserId());
+    }
+    // 新微博加到缓存中，并设置缓存过期时间
+    zSetOperations.add(key, after.getId(), after.getId().doubleValue());
+    Duration timeToLive = cacheConfiguration.getTtlFunction().getTimeToLive(key, after.getId());
+    redisTemplate.expire(key, timeToLive);
+    // 如果缓存中的微博数量超过指定条数，那么删除最旧的微博
+    if (size != null && size >= CACHE_WEIBO_SIZE_EACH_USER) {
+      zSetOperations.popMin(key, (size + 1) - CACHE_WEIBO_SIZE_EACH_USER);
     }
   }
 
@@ -135,11 +145,11 @@ public class WeiboCache {
    * @param before 删除前的微博
    */
   public void handleCacheAfterDelete(Weibo before) {
-    List<String> keys = List.of(WEIBO_ID_CACHE_PREFIX + "::" + before.getId());
+    List<String> keys =
+        List.of(
+            WEIBO_ID_CACHE_PREFIX + "::" + before.getId(),
+            WEIBO_IDS_BY_USER_ID_CACHE_PREFIX + "::" + before.getUserId());
     redisTemplate.delete(keys);
-    redisTemplate
-        .opsForZSet()
-        .remove(WEIBO_IDS_BY_USER_ID_CACHE_PREFIX + "::" + before.getUserId(), before.getId());
   }
 
   /**

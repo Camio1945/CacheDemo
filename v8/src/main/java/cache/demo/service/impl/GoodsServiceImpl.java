@@ -92,8 +92,8 @@ public class GoodsServiceImpl implements IGoodsService {
   }
 
   @Override
-  public Integer getIdByStoreIdName(@NonNull Integer storeId, @NonNull String name) {
-    return goodsCache.getIdByStoreIdName(storeId, name);
+  public Goods getByStoreIdName(@NonNull Integer storeId, @NonNull String name) {
+    return goodsCache.getById(goodsCache.getIdByStoreIdName(storeId, name));
   }
 
   @Override

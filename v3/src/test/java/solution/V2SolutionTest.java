@@ -44,7 +44,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 class V2SolutionTest extends WithSpringBootTestAnnotation {
   private static final int MAX_ID = 100000;
   private static final String KEY_PREFIX = GOODS_ID_CACHE_PREFIX + "::";
-  private static final int COUNT = 100;
+  private static final int COUNT = 1000;
 
   @Autowired IGoodsService goodsService;
   @Autowired GoodsMapper goodsMapper;
@@ -52,8 +52,8 @@ class V2SolutionTest extends WithSpringBootTestAnnotation {
 
   @BeforeEach
   void setUp() {
-    // 先查询一次数据库，让数据库连接池初始化
-    goodsMapper.selectById(MAX_ID);
+    // 先做一次数据库操作，让数据库连接池初始化
+    goodsMapper.deleteById(MAX_ID + 1);
     // 再删除缓存
     stringRedisTemplate.delete(KEY_PREFIX + MAX_ID);
   }
@@ -64,6 +64,7 @@ class V2SolutionTest extends WithSpringBootTestAnnotation {
   @Test
   @Deprecated
   void solution1() throws InterruptedException {
+    printHintLog("solution1");
     TimeInterval timeInterval = new TimeInterval();
     CountDownLatch countDownLatch = new CountDownLatch(COUNT);
     List<Thread> threadList = new ArrayList<>();
@@ -77,11 +78,19 @@ class V2SolutionTest extends WithSpringBootTestAnnotation {
       threadList.add(thread);
       countDownLatch.countDown();
     }
-    for (Thread thread : threadList) {
-      thread.join();
-    }
+    joinThreads(threadList);
     log.info("\nsolution1 耗时：{}ms", timeInterval.intervalMs());
     log.info("从控制台应该能看到只打印了一条 SQL 语句。");
+  }
+
+  private static void printHintLog(String method) {
+    log.info(
+        "\n\n\n\n\n\n\n{} begin...\n"
+            + "要查看控制台打印的 SQL 语句，需要打开 application.yml 中的如下配置：\n"
+            + "mybatis-plus:\n"
+            + "  configuration:\n"
+            + "    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl\n",
+        method);
   }
 
   private void awaitCountDownLatch(CountDownLatch countDownLatch) {
@@ -92,8 +101,15 @@ class V2SolutionTest extends WithSpringBootTestAnnotation {
     }
   }
 
+  private static void joinThreads(List<Thread> threadList) throws InterruptedException {
+    for (Thread thread : threadList) {
+      thread.join();
+    }
+  }
+
   @Test
   void solution2() throws InterruptedException {
+    printHintLog("solution2");
     TimeInterval timeInterval = new TimeInterval();
     CountDownLatch countDownLatch = new CountDownLatch(COUNT);
     List<Thread> threadList = new ArrayList<>();
@@ -107,9 +123,7 @@ class V2SolutionTest extends WithSpringBootTestAnnotation {
       threadList.add(thread);
       countDownLatch.countDown();
     }
-    for (Thread thread : threadList) {
-      thread.join();
-    }
+    joinThreads(threadList);
     log.info("\nsolution2 耗时：{}ms", timeInterval.intervalMs());
     log.info("从控制台应该能看到只打印了一条 SQL 语句。");
   }

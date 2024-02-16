@@ -24,6 +24,7 @@ public class UserServiceImpl implements IUserService {
     return userCache.getById(id);
   }
 
+  @Override
   public User getByAccount(@NonNull String account) {
     return userCache.getById(userCache.getIdByAccount(account));
   }

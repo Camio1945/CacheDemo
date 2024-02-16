@@ -10,8 +10,7 @@ import cn.hutool.core.date.TimeInterval;
 import common.WithSpringBootTestAnnotation;
 import java.util.stream.IntStream;
 import lombok.extern.slf4j.Slf4j;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.StringRedisTemplate;
 
@@ -37,28 +36,34 @@ class V1SolutionTest extends WithSpringBootTestAnnotation {
   @Autowired GoodsMapper goodsMapper;
   @Autowired StringRedisTemplate stringRedisTemplate;
 
-  @Test
-  void solution() {
-    // 先删除缓存
+  @BeforeEach
+  void beforeEach() {
+    // 删除一些缓存
     stringRedisTemplate.delete(KEY_PREFIX + MAX_ID);
     stringRedisTemplate.delete(KEY_PREFIX + (MAX_ID + 1));
+
+    // 删除不应该存在的数据
+    goodsService.delete(MAX_ID + 1);
 
     // 这里先查一遍，防止初始化数据库连接的耗时影响测试结果（这里与缓存无关）
     goodsMapper.selectById(MAX_ID);
     goodsMapper.selectById(MAX_ID + 1);
+  }
 
+  @Test
+  void solution() {
     log.info("test: 耗时 20 秒左右，请耐心等待...");
-    int times = 50000;
+    int times = 10000;
 
     // 先测试一下正常情况，数据库中存在，查了一次之后，后续就会查缓存
     TimeInterval timeInterval = new TimeInterval();
-    IntStream.range(0, times).parallel().forEach(i -> goodsService.getById(MAX_ID));
+    IntStream.range(0, times).forEach(i -> goodsService.getById(MAX_ID));
     long timeWithExistingGoods = timeInterval.intervalMs();
     log.info("test: 查询存在的商品耗时: {} ms\n", timeWithExistingGoods);
 
-    timeInterval = new TimeInterval();
     // 再测试一下有问题的情况，数据库中不存在，每次都会去查数据库
-    IntStream.range(0, times).parallel().forEach(i -> goodsService.getById(MAX_ID + 1));
+    timeInterval = new TimeInterval();
+    IntStream.range(0, times).forEach(i -> goodsService.getById(MAX_ID + 1));
     long timeWithNotExistingGoods = timeInterval.intervalMs();
     log.info("test: 查询不存在的商品耗时: {} ms\n", timeWithNotExistingGoods);
 

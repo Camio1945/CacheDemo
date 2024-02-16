@@ -4,12 +4,14 @@ import cache.demo.entity.Goods;
 import cache.demo.mapper.GoodsMapper;
 import cache.demo.util.SingleFlightUtil;
 import cn.hutool.core.lang.Assert;
+import java.time.Duration;
 import java.util.*;
 import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
 import org.springframework.data.redis.core.*;
 import org.springframework.stereotype.Service;
 
@@ -33,8 +35,8 @@ public class GoodsCache {
   private static int maxAllowedId = Integer.MAX_VALUE;
 
   private GoodsMapper goodsMapper;
-
   private RedisTemplate<String, Object> redisTemplate;
+  private RedisCacheConfiguration cacheConfiguration;
 
   /**
    * 更新 {@link #maxAllowedId} 的值
@@ -118,6 +120,8 @@ public class GoodsCache {
                     .map(id -> ZSetOperations.TypedTuple.of((Object) id, id.doubleValue()))
                     .collect(Collectors.toSet());
             zSetOperations.add(key, set);
+            Duration timeToLive = cacheConfiguration.getTtlFunction().getTimeToLive(key, set);
+            redisTemplate.expire(key, timeToLive);
           }
           return goodsIds;
         });

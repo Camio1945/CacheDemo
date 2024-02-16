@@ -15,11 +15,7 @@ import org.springframework.data.redis.connection.*;
 import org.springframework.data.redis.core.*;
 
 /**
- * 用于演示 v4 版本的问题：
- *
- * <pre>
- *
- * </pre>
+ * 用于演示 v4 版本的问题：见 README.md 文档。
  *
  * @author Camio1945
  */

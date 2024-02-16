@@ -31,13 +31,13 @@ public interface IGoodsService {
   IPage<Goods> getPageByStoreId(@NonNull Integer storeId, @NonNull Page<Goods> pageReq, String name);
 
   /**
-   * 根据店铺 id 和商品名称获取商品 id
+   * 根据店铺 id 和商品名称获取商品
    *
    * @param storeId 店铺 id
    * @param name 商品名称
-   * @return 商品 id
+   * @return 商品
    */
-  Integer getIdByStoreIdName(@NonNull Integer storeId, @NonNull String name);
+   Goods getByStoreIdName(@NonNull Integer storeId, @NonNull String name);
 
   /**
    * 新增商品
